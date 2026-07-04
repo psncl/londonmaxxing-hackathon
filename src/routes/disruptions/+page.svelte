@@ -11,7 +11,12 @@
 		type ICellRendererParams
 	} from "ag-grid-community";
 	import { getDb } from "$lib/db";
-	import { getAllDisruptions, type StationDisruptionRow } from "$lib/data/queries";
+	import {
+		getAllDisruptions,
+		getAllLineIds,
+		replaceAllDisruptions,
+		type StationDisruptionRow
+	} from "$lib/data/queries";
 	import { LINE_COLORS, lineTextColor } from "$lib/lineColors";
 
 	ModuleRegistry.registerModules([AllCommunityModule]);
@@ -96,18 +101,12 @@
 	let gridApi: GridApi<StationDisruptionRow> | null = null;
 	let loadError = $state<string | null>(null);
 	let quickFilter = $state("");
+	// True until we've shown either cached rows or the result of a live sync -
+	// avoids rendering a permanently-empty-looking grid while data is still
+	// on its way in.
+	let loading = $state(true);
 
-	onMount(async () => {
-		let db: Database;
-		try {
-			db = await getDb();
-		} catch {
-			loadError = "Couldn't load station data. Try again once you're online.";
-			return;
-		}
-
-		const rowData = getAllDisruptions(db);
-
+	function createDisruptionsGrid(rowData: StationDisruptionRow[]) {
 		if (!gridDiv) return;
 		gridApi = createGrid<StationDisruptionRow>(gridDiv, {
 			theme: govukTheme,
@@ -142,6 +141,47 @@
 				resizable: true
 			}
 		});
+	}
+
+	async function syncAllLiveDisruptions(db: Database) {
+		const lineIds = getAllLineIds(db);
+		try {
+			const res = await fetch(`/api/disruptions?lineIds=${lineIds.join(",")}`);
+			if (!res.ok) return;
+			const data = await res.json();
+			replaceAllDisruptions(db, data.liftDisruptions ?? [], data.lineDisruptions ?? []);
+		} catch {
+			// Offline or TfL unreachable - keep showing whatever was already cached.
+		}
+	}
+
+	onMount(async () => {
+		let db: Database;
+		try {
+			db = await getDb();
+		} catch {
+			loadError = "Couldn't load station data. Try again once you're online.";
+			loading = false;
+			return;
+		}
+
+		const cachedRows = getAllDisruptions(db);
+		if (cachedRows.length > 0) {
+			createDisruptionsGrid(cachedRows);
+			loading = false;
+		}
+
+		if (navigator.onLine) {
+			await syncAllLiveDisruptions(db);
+			const freshRows = getAllDisruptions(db);
+			if (gridApi) {
+				gridApi.setGridOption("rowData", freshRows);
+			} else {
+				createDisruptionsGrid(freshRows);
+			}
+		}
+
+		loading = false;
 	});
 
 	onDestroy(() => {
@@ -172,7 +212,10 @@
 			/>
 		</div>
 
-		<div class="grid-wrapper" bind:this={gridDiv}></div>
+		{#if loading}
+			<p class="govuk-hint">Loading disruptions…</p>
+		{/if}
+		<div class="grid-wrapper" class:hidden={loading} bind:this={gridDiv}></div>
 	{/if}
 </main>
 
@@ -224,6 +267,15 @@
 	.grid-wrapper {
 		height: 60vh;
 		min-height: 24rem;
+	}
+
+	.grid-wrapper.hidden {
+		display: none;
+	}
+
+	.govuk-hint {
+		color: #505a5f;
+		font-size: 0.9rem;
 	}
 
 	:global(.detail-cell) {

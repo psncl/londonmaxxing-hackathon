@@ -112,6 +112,10 @@ export function getStationDetail(db: Database, stationId: string): StationDetail
 	};
 }
 
+export function getAllLineIds(db: Database): string[] {
+	return queryAll(db, "SELECT id FROM lines").map((r) => String(r.id));
+}
+
 export function getLiftDisruptions(db: Database, stationId: string): LiftDisruption[] {
 	const rows = queryAll(
 		db,
@@ -195,6 +199,43 @@ export function replaceDisruptions(
 			const placeholders = lineIds.map(() => "?").join(",");
 			db.run(`DELETE FROM line_disruptions WHERE line_id IN (${placeholders})`, lineIds);
 		}
+		const insertLift = db.prepare(
+			"INSERT INTO lift_disruptions (station_id, lift_id, message, fetched_at) VALUES (?, ?, ?, ?)"
+		);
+		for (const d of liftDisruptions) {
+			insertLift.run([d.stationId, d.liftId, d.message, fetchedAt]);
+		}
+		insertLift.free();
+
+		const insertLine = db.prepare(
+			"INSERT INTO line_disruptions (line_id, description, category, fetched_at) VALUES (?, ?, ?, ?)"
+		);
+		for (const d of lineDisruptions) {
+			insertLine.run([d.lineId, d.description, d.category, fetchedAt]);
+		}
+		insertLine.free();
+		db.run("COMMIT");
+	} catch (err) {
+		db.run("ROLLBACK");
+		throw err;
+	}
+}
+
+// Like replaceDisruptions, but for a network-wide sync (the disruptions
+// table view) rather than a single selected station: clears every cached
+// row instead of just the ones for a given station/line list, so
+// disruptions that have since resolved don't linger in the cache forever.
+export function replaceAllDisruptions(
+	db: Database,
+	liftDisruptions: { stationId: string; liftId: string; message: string }[],
+	lineDisruptions: { lineId: string; description: string; category: string }[]
+): void {
+	const fetchedAt = new Date().toISOString();
+	db.run("BEGIN");
+	try {
+		db.run("DELETE FROM lift_disruptions");
+		db.run("DELETE FROM line_disruptions");
+
 		const insertLift = db.prepare(
 			"INSERT INTO lift_disruptions (station_id, lift_id, message, fetched_at) VALUES (?, ?, ?, ?)"
 		);

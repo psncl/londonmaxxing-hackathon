@@ -63,8 +63,11 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		return json({ error: `TfL lift disruptions unavailable (${liftRes.status})` }, { status: 502 });
 	}
 	const allLiftDisruptions = (await liftRes.json()) as TflLiftDisruption[];
+	// No stationIds means "no filter" (e.g. a network-wide sync), not "match
+	// nothing" - Array.includes on an empty list would otherwise silently
+	// drop every disruption.
 	const liftDisruptions = allLiftDisruptions
-		.filter((d) => stationIds.includes(d.stationUniqueId))
+		.filter((d) => stationIds.length === 0 || stationIds.includes(d.stationUniqueId))
 		.flatMap((d) =>
 			d.disruptedLiftUniqueIds.map((liftId) => ({
 				stationId: d.stationUniqueId,
