@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:gis-tfl.opendata.arcgis.com)",
+      "WebFetch(domain:tfl.gov.uk)",
+      "Bash(pnpm run *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "svelte"
+  ]
+}
