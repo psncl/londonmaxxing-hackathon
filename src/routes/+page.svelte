@@ -13,6 +13,7 @@
 		type LiftDisruption,
 		type LineDisruption
 	} from "$lib/data/queries";
+	import { LINE_COLORS, lineTextColor } from "$lib/lineColors";
 
 	let db = $state<Database | null>(null);
 	let loadError = $state<string | null>(null);
@@ -141,7 +142,12 @@
 				<h3 class="govuk-heading-s">Lines</h3>
 				<ul class="lines">
 					{#each selected.lines as line (line.id)}
-						<li>{line.name}</li>
+						<li
+							class="line-pill"
+							style="background: {LINE_COLORS[line.id] ?? '#505a5f'}; color: {lineTextColor(line.id)};"
+						>
+							{line.name}
+						</li>
 					{/each}
 				</ul>
 
@@ -302,7 +308,22 @@
 		font-weight: 700;
 	}
 
-	.lines,
+	.lines {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		padding-left: 0;
+		margin: 0.25rem 0;
+		list-style: none;
+	}
+
+	.line-pill {
+		font-weight: 700;
+		font-size: 0.75rem;
+		padding: 0.15rem 0.5rem;
+		white-space: nowrap;
+	}
+
 	.disruptions {
 		padding-left: 1.25rem;
 		margin: 0.25rem 0;

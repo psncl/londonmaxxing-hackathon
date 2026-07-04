@@ -27,6 +27,7 @@
 	},
 	"dependencies": {
 		"@vite-pwa/sveltekit": "^1.1.0",
+		"ag-grid-community": "^36.0.0",
 		"sql.js": "^1.14.1",
 		"workbox-window": "^7.4.1"
 	}

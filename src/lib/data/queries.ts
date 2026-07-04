@@ -37,6 +37,16 @@ export interface LineDisruption {
 	fetchedAt: string;
 }
 
+export interface StationDisruptionRow {
+	stationId: string;
+	stationName: string;
+	type: "lift" | "line";
+	lineOrLiftId: string;
+	lineName: string | null;
+	detail: string;
+	fetchedAt: string;
+}
+
 function queryAll(db: Database, sql: string, params: SqlValue[] = []): Record<string, SqlValue>[] {
 	const stmt = db.prepare(sql);
 	stmt.bind(params);
@@ -128,6 +138,39 @@ export function getLineDisruptions(db: Database, lineIds: string[]): LineDisrupt
 		lineId: String(r.line_id),
 		description: String(r.description),
 		category: String(r.category),
+		fetchedAt: String(r.fetched_at)
+	}));
+}
+
+// All cached disruptions across every station, for the disruptions table view.
+// Lift disruptions are station-specific (station_id on the row). Line
+// disruptions have no station_id in the schema, so they're expanded via
+// station_lines to every station served by the affected line - "type" is kept
+// on each row so a table can distinguish "this station's lift is broken" from
+// "this station is on a line with a disruption somewhere".
+export function getAllDisruptions(db: Database): StationDisruptionRow[] {
+	const rows = queryAll(
+		db,
+		`SELECT s.id AS station_id, s.name AS station_name, 'lift' AS type,
+		        ld.lift_id AS ref_id, NULL AS line_name, ld.message AS detail, ld.fetched_at
+		 FROM lift_disruptions ld
+		 JOIN stations s ON s.id = ld.station_id
+		 UNION ALL
+		 SELECT s.id AS station_id, s.name AS station_name, 'line' AS type,
+		        d.line_id AS ref_id, l.name AS line_name, d.description AS detail, d.fetched_at
+		 FROM line_disruptions d
+		 JOIN lines l ON l.id = d.line_id
+		 JOIN station_lines sl ON sl.line_id = d.line_id
+		 JOIN stations s ON s.id = sl.station_id
+		 ORDER BY fetched_at DESC`
+	);
+	return rows.map((r) => ({
+		stationId: String(r.station_id),
+		stationName: String(r.station_name),
+		type: r.type === "lift" ? "lift" : "line",
+		lineOrLiftId: String(r.ref_id),
+		lineName: r.line_name == null ? null : String(r.line_name),
+		detail: String(r.detail),
 		fetchedAt: String(r.fetched_at)
 	}));
 }

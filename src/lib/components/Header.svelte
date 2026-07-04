@@ -3,7 +3,10 @@
 		<span class="govuk-header__logo">
 			<span class="govuk-header__crown">🚇</span>
 		</span>
-		<span class="govuk-header__service-name">Tube Step-free Information</span>
+		<a class="govuk-header__service-name" href="/">Tubemaxxing</a>
+		<nav class="govuk-header__nav">
+			<a class="govuk-header__link" href="/disruptions">Disruptions</a>
+		</nav>
 	</div>
 </header>
 
@@ -31,5 +34,23 @@
 		color: #ffffff;
 		font-size: 1.125rem;
 		font-weight: 700;
+		font-family: "GDS Transport", arial, sans-serif;
+		text-decoration: none;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.govuk-header__nav {
+		margin-left: auto;
+	}
+
+	.govuk-header__link {
+		color: #ffffff;
+		font-size: 1.05rem;
+		text-decoration: underline;
+	}
+
+	.govuk-header__link:hover {
+		text-decoration: none;
 	}
 </style>
