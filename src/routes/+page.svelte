@@ -91,22 +91,26 @@
 	}
 </script>
 
-<main>
-	<h1>Step-free Tube lookup</h1>
+<main class="govuk-main-wrapper">
+	<h1 class="govuk-heading-l">Step-free Tube lookup</h1>
 
 	{#if loadError}
-		<p class="error">{loadError}</p>
+		<p class="govuk-error-message">{loadError}</p>
 	{:else if !db}
-		<p class="hint">Loading station data…</p>
+		<p class="govuk-hint">Loading station data…</p>
 	{:else}
-		<input
-			type="text"
-			inputmode="search"
-			placeholder="Enter a station name…"
-			bind:value={search}
-			oninput={onSearchInput}
-			aria-label="Station name"
-		/>
+		<div class="govuk-form-group">
+			<label class="govuk-label" for="station-search">Station name</label>
+			<input
+				id="station-search"
+				class="govuk-input"
+				type="text"
+				inputmode="search"
+				placeholder="Enter a station name…"
+				bind:value={search}
+				oninput={onSearchInput}
+			/>
+		</div>
 
 		{#if matches.length > 0}
 			<ul class="matches">
@@ -120,28 +124,28 @@
 
 		{#if selected}
 			<section class="result">
-				<h2>{selected.name}</h2>
+				<h2 class="govuk-heading-m">{selected.name}</h2>
 
 				{#if selected.hasStepFree}
-					<p class="status ok">✓ Step-free access</p>
+					<strong class="govuk-tag govuk-tag--green">Step-free access</strong>
 				{:else}
-					<p class="status no">✗ Not step-free</p>
+					<strong class="govuk-tag govuk-tag--red">Not step-free</strong>
 					{#if selected.nearestStepFree}
-						<p class="hint">
+						<p class="govuk-hint">
 							Nearest step-free station: <strong>{selected.nearestStepFree.name}</strong>
 							({Math.round(selected.nearestStepFree.distanceM)}m away)
 						</p>
 					{/if}
 				{/if}
 
-				<h3>Lines</h3>
+				<h3 class="govuk-heading-s">Lines</h3>
 				<ul class="lines">
 					{#each selected.lines as line (line.id)}
 						<li>{line.name}</li>
 					{/each}
 				</ul>
 
-				<h3>Lift &amp; escalator disruptions</h3>
+				<h3 class="govuk-heading-s">Lift &amp; escalator disruptions</h3>
 				{#if liftDisruptions.length > 0}
 					<ul class="disruptions">
 						{#each liftDisruptions as d (d.liftId)}
@@ -149,11 +153,11 @@
 						{/each}
 					</ul>
 				{:else}
-					<p class="hint">None reported.</p>
+					<p class="govuk-hint">None reported.</p>
 				{/if}
 
 				{#if lineDisruptions.length > 0}
-					<h3>Line disruptions</h3>
+					<h3 class="govuk-heading-s">Line disruptions</h3>
 					<ul class="disruptions">
 						{#each lineDisruptions as d (d.lineId + d.description)}
 							<li>{d.description}</li>
@@ -162,7 +166,11 @@
 				{/if}
 
 				{#if lastSynced}
-					<p class="synced">{syncing ? "Updating…" : `Last updated ${formatSynced(lastSynced)}`}</p>
+					<p class="synced">
+						<strong class="govuk-tag govuk-tag--grey">
+							{syncing ? "Updating…" : `Last updated ${formatSynced(lastSynced)}`}
+						</strong>
+					</p>
 				{/if}
 			</section>
 		{/if}
@@ -170,34 +178,67 @@
 </main>
 
 <style>
-	main {
-		max-width: 28rem;
-		margin: 0 auto;
-		padding: 1rem;
-		font-family: system-ui, sans-serif;
+	:global(body) {
+		font-family:
+			"GDS Transport", arial, sans-serif;
+		color: #0b0c0c;
+		background: #ffffff;
 	}
 
-	h1 {
+	.govuk-main-wrapper {
+		max-width: 28rem;
+		margin: 0 auto;
+		padding: 1.5rem 1rem;
+	}
+
+	.govuk-heading-l {
+		font-size: 1.5rem;
+		font-weight: 700;
+		margin: 0 0 1.25rem;
+	}
+
+	.govuk-heading-m {
 		font-size: 1.25rem;
+		font-weight: 700;
+		margin: 0 0 0.5rem;
+	}
+
+	.govuk-heading-s {
+		font-size: 1rem;
+		font-weight: 700;
+		margin: 2rem 0 0.5rem;
+	}
+
+	.govuk-form-group {
 		margin-bottom: 1rem;
 	}
 
-	input {
+	.govuk-label {
+		display: block;
+		font-weight: 700;
+		margin-bottom: 0.3rem;
+	}
+
+	.govuk-input {
 		width: 100%;
 		font-size: 1rem;
-		padding: 0.75rem;
+		padding: 0.6rem;
 		box-sizing: border-box;
-		border: 1px solid #999;
-		border-radius: 0.5rem;
+		border: 2px solid #0b0c0c;
+		border-radius: 0;
+	}
+
+	.govuk-input:focus {
+		outline: 3px solid #ffdd00;
+		outline-offset: 0;
+		box-shadow: inset 0 0 0 2px #0b0c0c;
 	}
 
 	.matches {
 		list-style: none;
 		margin: 0.5rem 0;
 		padding: 0;
-		border: 1px solid #ddd;
-		border-radius: 0.5rem;
-		overflow: hidden;
+		border: 1px solid #b1b4b6;
 	}
 
 	.matches button {
@@ -207,7 +248,13 @@
 		border: none;
 		background: none;
 		font-size: 1rem;
-		border-bottom: 1px solid #eee;
+		font-family: inherit;
+		border-bottom: 1px solid #b1b4b6;
+		cursor: pointer;
+	}
+
+	.matches button:hover {
+		background: #f3f2f1;
 	}
 
 	.matches li:last-child button {
@@ -216,37 +263,53 @@
 
 	.result {
 		margin-top: 1.5rem;
+		border-top: 1px solid #b1b4b6;
+		padding-top: 1rem;
 	}
 
-	.status {
-		font-size: 1.1rem;
-		font-weight: 600;
+	.govuk-tag {
+		display: inline-block;
+		font-size: 0.875rem;
+		font-weight: 700;
+		letter-spacing: 1px;
+		text-transform: uppercase;
+		padding: 0.3rem 0.6rem;
 	}
 
-	.status.ok {
-		color: #0a7a2f;
+	.govuk-tag--green {
+		background: #00703c;
+		color: #ffffff;
 	}
 
-	.status.no {
-		color: #b3261e;
+	.govuk-tag--red {
+		background: #d4351c;
+		color: #ffffff;
 	}
 
-	.hint,
+	.govuk-tag--grey {
+		background: #eeefef;
+		color: #383f43;
+	}
+
+	.govuk-hint,
 	.synced {
-		color: #666;
+		color: #505a5f;
 		font-size: 0.9rem;
 	}
 
-	.error {
-		color: #b3261e;
+	.govuk-error-message {
+		color: #d4351c;
+		font-weight: 700;
 	}
 
 	.lines,
 	.disruptions {
 		padding-left: 1.25rem;
+		margin: 0.25rem 0;
 	}
 
 	.synced {
-		margin-top: 1rem;
+		margin-top: 2rem;
+		text-align: right;
 	}
 </style>

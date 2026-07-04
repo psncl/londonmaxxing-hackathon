@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { useRegisterSW } from 'virtual:pwa-register/svelte';
 	import favicon from '$lib/assets/favicon.svg';
+	import Header from '$lib/components/Header.svelte';
 
 	let { children } = $props();
 
@@ -16,4 +17,5 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
+<Header />
 {@render children()}
